@@ -24,9 +24,9 @@ namespace TextEditor
     /// </summary>
     public partial class SettingsWindow : Window
     {
-        private readonly GeneralData _data;
+        private readonly EditorSettings _data;
 
-        public SettingsWindow(GeneralData data)
+        public SettingsWindow(EditorSettings data)
         {
             InitializeComponent();
 
@@ -38,7 +38,7 @@ namespace TextEditor
         protected override void OnClosed(EventArgs e)
         {
             base.OnClosed(e);
-            File.WriteAllText(GeneralData.FilePath, JsonSerializer.Serialize(_data));
+            File.WriteAllText(EditorSettings.FilePath, JsonSerializer.Serialize(_data));
         }
 
         private void LoadSettings()
@@ -85,7 +85,10 @@ namespace TextEditor
             FontSizeChoose.Text = FontSizeChoose.Text.Where(c => char.IsDigit(c)).ToNormalString();
             _data.FontSize = double.Parse(FontSizeChoose.Text);
 
-            OnFontSizeChange?.Invoke(_data.FontSize);
+            if (_data.FontSize >= 2)
+            {
+                OnFontSizeChange?.Invoke(_data.FontSize);
+            }
         }
     }
 }

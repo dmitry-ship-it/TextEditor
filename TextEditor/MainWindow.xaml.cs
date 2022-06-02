@@ -1,24 +1,12 @@
 ﻿using Microsoft.Win32;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
 using TextEditor.Extensions;
-using TextEditor.FileHandling;
+using TextEditor.TextHandling;
 using TextEditor.Resources;
+using TextEditor.Visual;
+using System;
 
 namespace TextEditor
 {
@@ -27,15 +15,15 @@ namespace TextEditor
     /// </summary>
     public partial class MainWindow : Window
     {
-        private readonly IFileHandler _file;
-        private readonly SettingsWindow _settingsWindow;
-        private readonly GeneralData _generalData;
+        private ITextHandler _handler;
+        private readonly EditorSettings _editorSettings;
+        private SettingsWindow _settingsWindow;
 
-        public MainWindow(IFileHandler file, SettingsWindow settingsWindow, GeneralData generalData)
+        public MainWindow(EditorSettings editorSettings)
         {
-            _file = file;
-            _settingsWindow = settingsWindow;
-            _generalData = generalData;
+            _handler = new NoFileHandler();
+            _editorSettings = editorSettings;
+            _settingsWindow = new SettingsWindow(_editorSettings);
 
             SubscribeEvents();
             InitializeComponent();
@@ -43,9 +31,16 @@ namespace TextEditor
             LoadSettings();
         }
 
+        protected override void OnClosed(EventArgs e)
+        {
+            base.OnClosed(e);
+            Application.Current.Shutdown();
+        }
+
         private void LoadSettings()
         {
-            ChangeFont(_generalData.Font.ToFontFamily());
+            ChangeFont(_editorSettings.Font.ToFontFamily());
+            ChangeFontSize(_editorSettings.FontSize);
         }
 
         private void SubscribeEvents()
@@ -56,51 +51,67 @@ namespace TextEditor
 
         private void ChangeFont(FontFamily fontFamily)
         {
-            Content.FontFamily = fontFamily;
+            EditorContent.FontFamily = fontFamily;
         }
 
         private void ChangeFontSize(double fontSize)
         {
-            Content.FontSize = fontSize;
+            EditorContent.FontSize = fontSize;
+            FontSizeBlock.Text = fontSize.ToString();
         }
 
         private void CreateNewFile_Click(object sender, RoutedEventArgs e)
         {
-            Content.Focus();
+            _handler = new NoFileHandler();
+            EditorContent.Text = _handler.ReadAllText();
+            EditorContent.Focus();
         }
 
         private void OpenFile_Click(object sender, RoutedEventArgs e)
         {
-            var dialog = new OpenFileDialog
-            {
-                FileName = "Text file",
-                DefaultExt = ".txt",
-                Filter = "Text document (.txt)|*.txt"
-            };
+            var dialog = FileHandler.CreateFileDialog(DialogType.Open);
 
             if (dialog.ShowDialog() is true)
             {
-                _file.SetNewFileInstance(dialog.FileName);
-                Content.Text = _file.ReadAllText();
+                _handler = new FileHandler(dialog.FileName);
+                EditorContent.Text = _handler.ReadAllText();
+                StatusBlock.SetColoredText("File opened.", Brushes.Green);
             }
         }
 
         private void SaveCommand_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            _file.WriteAllText(Content.Text);
+            if (_handler is NoFileHandler)
+            {
+                var dialog = FileHandler.CreateFileDialog(DialogType.Save);
+
+                if (dialog.ShowDialog() is true)
+                {
+                    _handler = new FileHandler(dialog.FileName);
+                }
+            }
+
+            if (_handler.IsAvailable)
+            {
+                _handler.WriteAllText(EditorContent.Text);
+                StatusBlock.SetColoredText("File saved.", Brushes.Green);
+            }
         }
 
         private void KeyBinding_MouseWheel(object sender, MouseWheelEventArgs e)
         {
             if (Keyboard.Modifiers is ModifierKeys.Control &&
-                ((Content.FontSize >= 12 && e.Delta < 0) || (Content.FontSize <= 100 && e.Delta > 0)))
+                ((EditorContent.FontSize >= 12 && e.Delta < 0) || (EditorContent.FontSize <= 100 && e.Delta > 0)))
             {
-                Content.FontSize += e.Delta >> 5;
+                EditorContent.FontSize += e.Delta / 30d;
+                FontSizeBlock.Text = EditorContent.FontSize.ToString();
             }
         }
 
         private void Settings_Click(object sender, RoutedEventArgs e)
         {
+            _settingsWindow = new SettingsWindow(_editorSettings);
+            SubscribeEvents();
             _settingsWindow.Show();
         }
 

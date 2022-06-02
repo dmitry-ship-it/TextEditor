@@ -9,7 +9,7 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Xml.Serialization;
-using TextEditor.FileHandling;
+using TextEditor.TextHandling;
 using TextEditor.Resources;
 
 namespace TextEditor
@@ -32,16 +32,13 @@ namespace TextEditor
         {
             CreateRequiredFiles();
 
-            services.AddSingleton<IFileHandler, FileHandler>();
-
             services.AddSingleton<MainWindow>();
-            services.AddSingleton<SettingsWindow>();
-            services.AddSingleton(JsonSerializer.Deserialize<GeneralData>(File.ReadAllText(GeneralData.FilePath))!);
+            services.AddSingleton(JsonSerializer.Deserialize<EditorSettings>(File.ReadAllText(EditorSettings.FilePath))!);
         }
 
         private static void CreateRequiredFiles()
         {
-            GeneralData.CreateFile();
+            EditorSettings.CreateFile();
         }
 
         private void OnStartup(object sender, StartupEventArgs e)
@@ -50,6 +47,12 @@ namespace TextEditor
                 ?? throw new ArgumentException("Service not found.");
 
             mainWindow.Show();
+        }
+
+        protected override void OnExit(ExitEventArgs e)
+        {
+            base.OnExit(e);
+            Dispose();
         }
 
         #region Dispose

@@ -10,20 +10,20 @@ using System.Windows.Media;
 namespace TextEditor.Resources
 {
     [Serializable]
-    public sealed class GeneralData
+    public sealed class EditorSettings
     {
         public string Font { get; set; } = "Segoe UI";
 
         public double FontSize { get; set; } = 11;
 
         [NonSerialized]
-        public const string FilePath = "GeneralData.json";
+        public const string FilePath = $"{nameof(EditorSettings)}.json";
 
         internal static void CreateFile()
         {
             if (!File.Exists(FilePath))
             {
-                File.WriteAllText(FilePath, JsonSerializer.Serialize(new GeneralData()));
+                File.WriteAllText(FilePath, JsonSerializer.Serialize(new EditorSettings()));
             }
         }
     }

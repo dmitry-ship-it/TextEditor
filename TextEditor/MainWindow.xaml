@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TextEditor"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="Text editor" Height="450" Width="800">
 
     <Window.Resources>
         <ResourceDictionary>
@@ -34,17 +34,20 @@
             <MenuItem Header="View" ></MenuItem>
         </Menu>
         <TextBox 
-            Margin="0,23,0,0" 
+            Margin="0,23,0,21" 
             TextWrapping="Wrap" 
-            VerticalAlignment="Top"
-            Height="381" 
             ScrollViewer.CanContentScroll="True"
             ScrollViewer.VerticalScrollBarVisibility="Auto"
             AcceptsReturn="True"
             MouseWheel="KeyBinding_MouseWheel"
-            x:Name="Content"/>
-        <DockPanel Height="16" VerticalAlignment="Bottom">
-            <TextBlock x:Name="Status" Width="Auto"/>
+            x:Name="EditorContent"/>
+        <DockPanel Height="21" VerticalAlignment="Bottom" FlowDirection="LeftToRight">
+            <TextBlock DockPanel.Dock="Left" x:Name="StatusBlock"/>
+
+            <Grid DockPanel.Dock="Right" Width="130" HorizontalAlignment="Right">
+                <TextBlock DockPanel.Dock="Right" x:Name="FontSizeBlock" HorizontalAlignment="Right" Width="50"/>
+                <TextBlock Text="Font size:" Width="60" HorizontalAlignment="Right" Margin="0,0,55,0"/>
+            </Grid>
         </DockPanel>
     </Grid>
 </Window>
