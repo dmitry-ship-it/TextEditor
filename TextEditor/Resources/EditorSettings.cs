@@ -14,7 +14,11 @@ namespace TextEditor.Resources
     {
         public string Font { get; set; } = "Segoe UI";
 
-        public double FontSize { get; set; } = 11;
+        public double FontSize { get; set; } = 14;
+
+        public bool TextWrap { get; set; } = true;
+
+        public bool StatusBar { get; set; } = true;
 
         [NonSerialized]
         public const string FilePath = $"{nameof(EditorSettings)}.json";

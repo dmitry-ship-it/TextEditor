@@ -2,7 +2,7 @@
 
 namespace TextEditor.TextHandling
 {
-    public interface ITextHandler
+    public interface ITextHandler : IAsyncTextHandler
     {
         public bool IsAvailable { get; }
 

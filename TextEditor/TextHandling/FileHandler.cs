@@ -17,16 +17,17 @@ namespace TextEditor.TextHandling
         public FileHandler(string path)
         {
             _path = path;
+
+            if (!IsAvailable)
+            {
+                // create file by writing empty string
+                WriteAllText(string.Empty);
+            }
         }
 
         public void SetNewFileInstance()
         {
-            var dialog = new SaveFileDialog
-            {
-                FileName = "Text file",
-                DefaultExt = ".txt",
-                Filter = "Text document (.txt)|*.txt"
-            };
+            var dialog = CreateFileDialog(DialogType.Save);
 
             if (dialog.ShowDialog() is true)
             {
@@ -39,9 +40,19 @@ namespace TextEditor.TextHandling
             return File.ReadAllText(_path);
         }
 
+        public async Task<string> ReadAllTextAsync()
+        {
+            return await File.ReadAllTextAsync(_path);
+        }
+
         public void WriteAllText(string text)
         {
             File.WriteAllText(_path, text);
+        }
+
+        public async Task WriteAllTextAsync(string text)
+        {
+            await File.WriteAllTextAsync(_path, text);
         }
 
         public static FileDialog CreateFileDialog(DialogType dialogType)

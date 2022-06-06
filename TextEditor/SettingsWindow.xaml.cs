@@ -43,27 +43,28 @@ namespace TextEditor
 
         private void LoadSettings()
         {
-            LoadFont();
-            LoadFontSize();
-        }
-
-        private void LoadFont()
-        {
+            // load font family
             foreach (var font in Fonts.SystemFontFamilies)
             {
                 FontChoose.Items.Add(font.ToFamilyString());
             }
 
             FontChoose.SelectedIndex = FontChoose.Items.IndexOf(_data.Font);
-        }
 
-        private void LoadFontSize()
-        {
+            // load font size
             FontSizeChoose.Text = _data.FontSize.ToString();
+
+            // load text wrap
+            EditorWordWrap.IsChecked = _data.TextWrap;
+
+            // load status bar visibility
+            EditorStatusBar.IsChecked = _data.StatusBar;
         }
 
         public event Action<FontFamily>? OnFontChange;
         public event Action<double>? OnFontSizeChange;
+        public event Action<bool>? OnTextWrapChange;
+        public event Action<bool>? OnStatusBarChange;
 
         private void FontChoose_DropDownClosed(object sender, EventArgs e)
         {
@@ -89,6 +90,18 @@ namespace TextEditor
             {
                 OnFontSizeChange?.Invoke(_data.FontSize);
             }
+        }
+
+        private void EditorWordWrap_Changed(object sender, RoutedEventArgs e)
+        {
+            _data.TextWrap = (bool)EditorWordWrap.IsChecked!;
+            OnTextWrapChange?.Invoke(_data.TextWrap);
+        }
+
+        private void EditorStatusBar_Changed(object sender, RoutedEventArgs e)
+        {
+            _data.StatusBar = (bool)EditorStatusBar.IsChecked!;
+            OnStatusBarChange?.Invoke(_data.StatusBar);
         }
     }
 }

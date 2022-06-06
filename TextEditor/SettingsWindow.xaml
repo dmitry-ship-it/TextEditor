@@ -17,6 +17,8 @@
                     <TextBlock HorizontalAlignment="Left" Margin="10,25,0,0" TextWrapping="Wrap" Text="Editor Font" VerticalAlignment="Top" Height="22" Width="135" TextAlignment="Center" Padding="3"/>
                     <TextBox HorizontalAlignment="Left" Margin="150,52,0,0" Width="120" Height="22" VerticalAlignment="Top" x:Name="FontSizeChoose" TextChanged="FontSizeChoose_TextChanged"/>
                     <TextBlock HorizontalAlignment="Left" Margin="10,52,0,0" TextWrapping="Wrap" Text="Editor Font Size" VerticalAlignment="Top" Height="22" Width="135" TextAlignment="Center" Padding="3"/>
+                    <CheckBox HorizontalAlignment="Left" Margin="150,79,0,0" Content="Word Wrap" VerticalAlignment="Top" Height="22" Width="120" VerticalContentAlignment="Center" x:Name="EditorWordWrap" Checked="EditorWordWrap_Changed" Unchecked="EditorWordWrap_Changed"/>
+                    <CheckBox HorizontalAlignment="Left" Margin="150,106,0,0" Content="Status Bar" VerticalAlignment="Top" Height="22" Width="120" VerticalContentAlignment="Center" x:Name="EditorStatusBar" Checked="EditorStatusBar_Changed" Unchecked="EditorStatusBar_Changed"/>
                 </Grid>
             </TabItem>
             <TabItem Header="Theme">

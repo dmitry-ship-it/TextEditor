@@ -4,49 +4,77 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TextEditor"
+        xmlns:cmdExt="clr-namespace:TextEditor.Extensions"
         mc:Ignorable="d"
-        Title="Text editor" Height="450" Width="800">
-
-    <Window.Resources>
-        <ResourceDictionary>
-            <RoutedCommand x:Key="SaveCommand" />
-        </ResourceDictionary>
-    </Window.Resources>
-
-    <Window.InputBindings>
-        <KeyBinding Key="S" Modifiers="Ctrl" Command="{StaticResource SaveCommand}"/>
-    </Window.InputBindings>
+        Title="Text editor" Height="600" Width="1000">
 
     <Window.CommandBindings>
-        <CommandBinding Command="{StaticResource SaveCommand}" Executed="SaveCommand_Executed"/>
+        <CommandBinding Command="New" Executed="NewCommand_Executed"/>
+        <CommandBinding Command="Open" Executed="OpenCommand_Executed"/>
+        <CommandBinding Command="Save" Executed="SaveCommand_Executed"/>
+        <CommandBinding Command="cmdExt:ApplicationCommandsExtension.SaveAs" Executed="SaveAsCommand_Executed"/>
+        <CommandBinding Command="cmdExt:ApplicationCommandsExtension.GotoSettings" Executed="GotoSettingsCommand_Executed"/>
+        <CommandBinding Command="cmdExt:ApplicationCommandsExtension.ExitApplication" Executed="ExitApplicationCommand_Executed"/>
+
+        <CommandBinding Command="cmdExt:ApplicationCommandsExtension.InsertDateTime" Executed="InsertDateTimeCommand_Executed"/>
     </Window.CommandBindings>
 
+    <!--<Window.InputBindings>
+        <KeyBinding Key="N" Modifiers="Ctrl" Command="New"/>
+        <KeyBinding Key="O" Modifiers="Ctrl" Command="Open"/>
+        <KeyBinding Key="S" Modifiers="Ctrl" Command="Save"/>
+        <KeyBinding Key="S" Modifiers="Ctrl+Shift" Command="SaveAs"/>
+    </Window.InputBindings>-->
+
     <Grid>
-        <Menu Height="Auto" VerticalAlignment="Top">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <Menu Height="Auto" Grid.Row="0">
             <MenuItem Header="File">
-                <MenuItem Header="New" Click="CreateNewFile_Click"></MenuItem>
-                <MenuItem Header="Open..." Click="OpenFile_Click" ></MenuItem>
-                <MenuItem Header="Settings" Click="Settings_Click"></MenuItem>
+                <MenuItem Header="New" Command="New"></MenuItem>
+                <MenuItem Header="Open..." Command="Open" ></MenuItem>
+                <MenuItem Header="Save" Command="Save"></MenuItem>
+                <MenuItem Header="Save as" Command="cmdExt:ApplicationCommandsExtension.SaveAs"></MenuItem>
+                <MenuItem Header="Settings" Command="cmdExt:ApplicationCommandsExtension.GotoSettings"></MenuItem>
                 <Separator />
-                <MenuItem Header="Exit" Click="Exit_Click" ></MenuItem>
+                <MenuItem Header="Exit" Command="cmdExt:ApplicationCommandsExtension.ExitApplication"></MenuItem>
             </MenuItem>
-            <MenuItem Header="Edit" ></MenuItem>
-            <MenuItem Header="View" ></MenuItem>
+            <MenuItem Header="Edit">
+                <MenuItem Header="Date/Time" Command="cmdExt:ApplicationCommandsExtension.InsertDateTime"></MenuItem>
+            </MenuItem>
+            <MenuItem Header="View">
+                <MenuItem Header="Text wrap" x:Name="TextWrapTrigger" Click="TextWrapTrigger_Click"></MenuItem>
+                <MenuItem Header="Status bar" x:Name="StatusBarTrigger" Click="StatusBarTrigger_Click"></MenuItem>
+            </MenuItem>
         </Menu>
         <TextBox 
-            Margin="0,23,0,21" 
-            TextWrapping="Wrap" 
             ScrollViewer.CanContentScroll="True"
             ScrollViewer.VerticalScrollBarVisibility="Auto"
+            ScrollViewer.HorizontalScrollBarVisibility="Auto"
             AcceptsReturn="True"
             MouseWheel="KeyBinding_MouseWheel"
-            x:Name="EditorContent"/>
-        <DockPanel Height="21" VerticalAlignment="Bottom" FlowDirection="LeftToRight">
+            x:Name="EditorContent"
+            Grid.Row="1"/>
+        
+        <DockPanel x:Name="DockPanel" Height="Auto" FlowDirection="LeftToRight" Grid.Row="2">
             <TextBlock DockPanel.Dock="Left" x:Name="StatusBlock"/>
 
-            <Grid DockPanel.Dock="Right" Width="130" HorizontalAlignment="Right">
-                <TextBlock DockPanel.Dock="Right" x:Name="FontSizeBlock" HorizontalAlignment="Right" Width="50"/>
-                <TextBlock Text="Font size:" Width="60" HorizontalAlignment="Right" Margin="0,0,55,0"/>
+            <Grid DockPanel.Dock="Right" Width="Auto" HorizontalAlignment="Right">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition />
+                    <ColumnDefinition />
+                    <ColumnDefinition />
+                    <ColumnDefinition />
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Text="{Binding StringFormat='Text Wrap: {0}',ElementName=TextWrapTrigger,Path=IsChecked}" TextAlignment="Center" Grid.Column="0"/>
+                <TextBlock Text="|" TextAlignment="Center" Grid.Column="1" Margin="10,0,10,0"/>
+                <TextBlock Text="{Binding StringFormat='Font size: {0}',ElementName=EditorContent,Path=FontSize}" TextAlignment="Center" Grid.Column="2"/>
+                <TextBlock Grid.Column="3" Margin="5,0,5,0"/>
             </Grid>
         </DockPanel>
     </Grid>

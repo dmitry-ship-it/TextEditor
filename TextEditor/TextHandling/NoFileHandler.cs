@@ -24,9 +24,19 @@ namespace TextEditor.TextHandling
             return (string)_content.Clone();
         }
 
+        public async Task<string> ReadAllTextAsync()
+        {
+            return await Task.FromResult(ReadAllText());
+        }
+
         public void WriteAllText(string text)
         {
-            _content = (string)text.Clone();
+            _content = text;
+        }
+
+        public async Task WriteAllTextAsync(string text)
+        {
+            await Task.Run(() => WriteAllText(text));
         }
     }
 }
