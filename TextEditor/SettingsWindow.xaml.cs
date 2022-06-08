@@ -1,19 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
+﻿using ModernWpf;
+using System;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 using TextEditor.Extensions;
 using TextEditor.Resources;
 
@@ -31,7 +23,6 @@ namespace TextEditor
             InitializeComponent();
 
             _data = data;
-
             LoadSettings();
         }
 
@@ -59,12 +50,16 @@ namespace TextEditor
 
             // load status bar visibility
             EditorStatusBar.IsChecked = _data.StatusBar;
+
+            // load line numbers visibility
+            EditorLineNumbers.IsChecked = _data.LineNumbers;
         }
 
         public event Action<FontFamily>? OnFontChange;
         public event Action<double>? OnFontSizeChange;
         public event Action<bool>? OnTextWrapChange;
         public event Action<bool>? OnStatusBarChange;
+        public event Action<bool>? OnLineNumbersChange;
 
         private void FontChoose_DropDownClosed(object sender, EventArgs e)
         {
@@ -102,6 +97,24 @@ namespace TextEditor
         {
             _data.StatusBar = (bool)EditorStatusBar.IsChecked!;
             OnStatusBarChange?.Invoke(_data.StatusBar);
+        }
+
+        private void EditorLineNumbers_Changed(object sender, RoutedEventArgs e)
+        {
+            _data.LineNumbers = (bool)EditorLineNumbers.IsChecked!;
+            OnLineNumbersChange?.Invoke(_data.LineNumbers);
+        }
+
+        private void ThemeButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (ThemeManager.Current.ApplicationTheme == ApplicationTheme.Light)
+            {
+                ThemeManager.Current.ApplicationTheme = ApplicationTheme.Dark;
+            }
+            else
+            {
+                ThemeManager.Current.ApplicationTheme = ApplicationTheme.Light;
+            }
         }
     }
 }

@@ -1,6 +1,4 @@
-﻿using System.IO;
-
-namespace TextEditor.TextHandling
+﻿namespace TextEditor.TextHandling
 {
     public interface ITextHandler : IAsyncTextHandler
     {

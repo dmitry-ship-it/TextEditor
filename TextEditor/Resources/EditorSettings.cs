@@ -1,11 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
-using System.Windows.Media;
 
 namespace TextEditor.Resources
 {
@@ -19,6 +14,8 @@ namespace TextEditor.Resources
         public bool TextWrap { get; set; } = true;
 
         public bool StatusBar { get; set; } = true;
+
+        public bool LineNumbers { get; set; } = false;
 
         [NonSerialized]
         public const string FilePath = $"{nameof(EditorSettings)}.json";

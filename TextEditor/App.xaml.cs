@@ -1,15 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using System;
-using System.Collections.Generic;
-using System.Configuration;
-using System.Data;
 using System.IO;
-using System.Linq;
 using System.Text.Json;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Xml.Serialization;
-using TextEditor.TextHandling;
 using TextEditor.Resources;
 
 namespace TextEditor
@@ -41,12 +34,14 @@ namespace TextEditor
             EditorSettings.CreateFile();
         }
 
-        private void OnStartup(object sender, StartupEventArgs e)
+        private async void OnStartup(object sender, StartupEventArgs e)
         {
             var mainWindow = _serviceProvider.GetService<MainWindow>()
                 ?? throw new ArgumentException("Service not found.");
 
             mainWindow.Show();
+
+            await mainWindow.ProcessStartupArgs(e.Args);
         }
 
         protected override void OnExit(ExitEventArgs e)

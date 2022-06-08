@@ -1,7 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using ModernWpf;
+using System;
+using System.IO;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -12,20 +11,29 @@ namespace TextEditor.Visual
     {
         private const int DelayValue = 5000;
 
-        public static async Task SetColoredText(this TextBlock textBlock, string text, Brush brush)
+        public static async Task SetColoredTextAsync(this TextBlock textBlock, string text, Brush brush, string filePath = "")
         {
             textBlock.Text = text;
-            textBlock.Foreground = brush;
+            //textBlock.Foreground = brush;
 
-            await textBlock.Reset();
+            await textBlock.ResetAsync(filePath);
         }
 
-        private static async Task Reset(this TextBlock textBlock)
+        private static async Task ResetAsync(this TextBlock textBlock, string filePath)
         {
             await Task.Delay(DelayValue);
 
-            textBlock.Text = string.Empty;
-            textBlock.Foreground = default;
+            if (string.IsNullOrEmpty(filePath))
+            {
+                textBlock.Text = string.Empty;
+            }
+            else
+            {
+                var lastDirSeparator = filePath.LastIndexOf(Path.DirectorySeparatorChar) + 1;
+                textBlock.Text = filePath[lastDirSeparator..];
+            }
+
+            //textBlock.Foreground.ClearValue(TextBlock.ForegroundProperty);
         }
     }
 }

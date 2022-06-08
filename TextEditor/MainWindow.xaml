@@ -3,9 +3,11 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:ui="http://schemas.modernwpf.com/2019"
         xmlns:local="clr-namespace:TextEditor"
         xmlns:cmdExt="clr-namespace:TextEditor.Extensions"
         mc:Ignorable="d"
+        ui:WindowHelper.UseModernWindowStyle="True"
         Title="Text editor" Height="600" Width="1000">
 
     <Window.CommandBindings>
@@ -19,53 +21,84 @@
         <CommandBinding Command="cmdExt:ApplicationCommandsExtension.InsertDateTime" Executed="InsertDateTimeCommand_Executed"/>
     </Window.CommandBindings>
 
-    <!--<Window.InputBindings>
-        <KeyBinding Key="N" Modifiers="Ctrl" Command="New"/>
-        <KeyBinding Key="O" Modifiers="Ctrl" Command="Open"/>
-        <KeyBinding Key="S" Modifiers="Ctrl" Command="Save"/>
-        <KeyBinding Key="S" Modifiers="Ctrl+Shift" Command="SaveAs"/>
-    </Window.InputBindings>-->
-
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
-        
-        <Menu Height="Auto" Grid.Row="0">
+
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition/>
+        </Grid.ColumnDefinitions>
+
+        <Menu Height="Auto" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2">
             <MenuItem Header="File">
-                <MenuItem Header="New" Command="New"></MenuItem>
-                <MenuItem Header="Open..." Command="Open" ></MenuItem>
-                <MenuItem Header="Save" Command="Save"></MenuItem>
-                <MenuItem Header="Save as" Command="cmdExt:ApplicationCommandsExtension.SaveAs"></MenuItem>
-                <MenuItem Header="Settings" Command="cmdExt:ApplicationCommandsExtension.GotoSettings"></MenuItem>
+                <MenuItem Header="New" Command="New"/>
+                <MenuItem Header="Open..." Command="Open"/>
+                <MenuItem Header="Save" Command="Save"/>
+                <MenuItem Header="Save as" Command="cmdExt:ApplicationCommandsExtension.SaveAs"/>
+                <MenuItem Header="Settings" Command="cmdExt:ApplicationCommandsExtension.GotoSettings"/>
                 <Separator />
-                <MenuItem Header="Exit" Command="cmdExt:ApplicationCommandsExtension.ExitApplication"></MenuItem>
+                <MenuItem Header="Exit" Command="cmdExt:ApplicationCommandsExtension.ExitApplication"/>
             </MenuItem>
             <MenuItem Header="Edit">
-                <MenuItem Header="Date/Time" Command="cmdExt:ApplicationCommandsExtension.InsertDateTime"></MenuItem>
+                <MenuItem Header="Undo" Command="Undo" CommandTarget="{Binding ElementName=EditorContent}"/>
+                <MenuItem Header="Redo" Command="Redo" CommandTarget="{Binding ElementName=EditorContent}"/>
+                <Separator/>
+                <MenuItem Header="Cut" Command="Cut" CommandTarget="{Binding ElementName=EditorContent}"/>
+                <MenuItem Header="Copy" Command="Copy" CommandTarget="{Binding ElementName=EditorContent}"/>
+                <MenuItem Header="Paste" Command="Paste" CommandTarget="{Binding ElementName=EditorContent}"/>
+                <MenuItem Header="Delete" Command="Delete" CommandTarget="{Binding ElementName=EditorContent}"/>
+                <Separator/>
+                <MenuItem Header="Find" Command="Find" CommandTarget="{Binding ElementName=EditorContent}"/>
+                <MenuItem Header="Replace" Command="Replace" CommandTarget="{Binding ElementName=EditorContent}"/>
+                <Separator/>
+                <MenuItem Header="Select all" Command="SelectAll" CommandTarget="{Binding ElementName=EditorContent}"/>
+                <MenuItem Header="Date/Time" Command="cmdExt:ApplicationCommandsExtension.InsertDateTime"/>
             </MenuItem>
             <MenuItem Header="View">
-                <MenuItem Header="Text wrap" x:Name="TextWrapTrigger" Click="TextWrapTrigger_Click"></MenuItem>
-                <MenuItem Header="Status bar" x:Name="StatusBarTrigger" Click="StatusBarTrigger_Click"></MenuItem>
+                <MenuItem Header="Text wrap" x:Name="TextWrapTrigger" Click="TextWrapTrigger_Click" IsCheckable="True"/>
+                <MenuItem Header="Status bar" x:Name="StatusBarTrigger" Click="StatusBarTrigger_Click" IsCheckable="True"/>
+                <MenuItem Header="Line numbers" x:Name="LineNumbersTrigger" Click="LineNumbersTrigger_Click" IsCheckable="True"/>
             </MenuItem>
         </Menu>
-        <TextBox 
-            ScrollViewer.CanContentScroll="True"
-            ScrollViewer.VerticalScrollBarVisibility="Auto"
-            ScrollViewer.HorizontalScrollBarVisibility="Auto"
-            AcceptsReturn="True"
-            MouseWheel="KeyBinding_MouseWheel"
-            x:Name="EditorContent"
-            Grid.Row="1"/>
-        
-        <DockPanel x:Name="DockPanel" Height="Auto" FlowDirection="LeftToRight" Grid.Row="2">
-            <TextBlock DockPanel.Dock="Left" x:Name="StatusBlock"/>
+
+        <Border CornerRadius="2" BorderThickness="1" BorderBrush="Gray" AllowDrop="True" Grid.Row="1" Grid.Column="0">
+            <ScrollViewer x:Name="NumberLinesScroll" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Hidden">
+                <TextBlock Background="Transparent" 
+                           FontWeight="Bold" 
+                           IsEnabled="False" 
+                           Text="1" 
+                           TextAlignment="Right"
+                           ScrollViewer.CanContentScroll="True"
+                           x:Name="EditorLineNumbers"/>
+            </ScrollViewer>
+        </Border>
+
+        <TextBox ScrollViewer.CanContentScroll="True"
+                 ScrollViewer.VerticalScrollBarVisibility="Auto"
+                 ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                 AllowDrop="True"
+                 Drop="EditorContent_Drop"
+                 DragEnter="EditorContent_DragEnter"
+                 MouseWheel="KeyBinding_MouseWheel"
+                 TextChanged="EditorContent_TextChanged"
+                 ScrollViewer.ScrollChanged="EditorContent_ScrollChanged"
+                 AcceptsReturn="True"
+                 x:Name="EditorContent"
+                 Grid.Row="1"
+                 Grid.Column="1"/>
+
+        <DockPanel x:Name="DockPanel" Width="Auto" FlowDirection="LeftToRight" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2">
+            <TextBlock DockPanel.Dock="Left" x:Name="StatusBlock" Margin="5,0,0,0"/>
 
             <Grid DockPanel.Dock="Right" Width="Auto" HorizontalAlignment="Right">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition />
+                    <ColumnDefinition />
+                    <ColumnDefinition Width="Auto" />
                     <ColumnDefinition />
                     <ColumnDefinition />
                     <ColumnDefinition />
@@ -73,8 +106,10 @@
 
                 <TextBlock Text="{Binding StringFormat='Text Wrap: {0}',ElementName=TextWrapTrigger,Path=IsChecked}" TextAlignment="Center" Grid.Column="0"/>
                 <TextBlock Text="|" TextAlignment="Center" Grid.Column="1" Margin="10,0,10,0"/>
-                <TextBlock Text="{Binding StringFormat='Font size: {0}',ElementName=EditorContent,Path=FontSize}" TextAlignment="Center" Grid.Column="2"/>
-                <TextBlock Grid.Column="3" Margin="5,0,5,0"/>
+                <TextBlock Text="{Binding StringFormat='Font: {0}',ElementName=EditorContent,Path=FontFamily}" TextAlignment="Center" Grid.Column="2"/>
+                <TextBlock Text="|" TextAlignment="Center" Grid.Column="3" Margin="10,0,10,0"/>
+                <TextBlock Text="{Binding StringFormat='Font size: {0}',ElementName=EditorContent,Path=FontSize}" TextAlignment="Center" Grid.Column="4"/>
+                <TextBlock Grid.Column="5" Margin="5,0,5,0"/>
             </Grid>
         </DockPanel>
     </Grid>

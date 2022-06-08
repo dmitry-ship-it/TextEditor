@@ -1,5 +1,4 @@
-﻿using Microsoft.Win32;
-using System.Windows;
+﻿using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
 using TextEditor.Extensions;
@@ -7,8 +6,12 @@ using TextEditor.TextHandling;
 using TextEditor.Resources;
 using TextEditor.Visual;
 using System;
-using System.IO;
 using System.ComponentModel;
+using System.IO;
+using System.Threading.Tasks;
+using System.Windows.Controls;
+using System.Text;
+using System.Linq;
 
 namespace TextEditor
 {
@@ -23,33 +26,63 @@ namespace TextEditor
 
         public MainWindow(EditorSettings editorSettings)
         {
-            _handler = new NoFileHandler();
             _editorSettings = editorSettings;
             _settingsWindow = new SettingsWindow(_editorSettings);
 
-            SubscribeEvents();
             InitializeComponent();
 
+            SubscribeEvents();
             LoadSettings();
+            SetNewTextHandler().Wait();
+        }
+
+        private async Task SetNewTextHandler(string? filePath = null)
+        {
+            if (string.IsNullOrEmpty(filePath))
+            {
+                _handler = new NoFileHandler();
+            }
+            else
+            {
+                _handler = new FileHandler(filePath);
+            }
+
+            EditorContent.Text = await _handler.ReadAllTextAsync();
+
+            if (_handler is FileHandler)
+            {
+                await StatusBlock.SetColoredTextAsync("File opened", Brushes.BlueViolet, filePath!);
+            }
+        }
+
+        public async Task ProcessStartupArgs(string[] args)
+        {
+            if (args is not null && args.Length == 1 && File.Exists(args[0]))
+            {
+                await SetNewTextHandler(args[0]);
+            }
         }
 
         protected override async void OnClosing(CancelEventArgs e)
         {
+            // check for unsaved text
             if ((_handler is NoFileHandler || await _handler.ReadAllTextAsync() != EditorContent.Text)
                 && !string.IsNullOrEmpty(EditorContent.Text))
             {
-                var msgBoxResult = MessageBox.Show(
+                var msgBoxResult = ModernWpf.MessageBox.Show(
                     messageBoxText: "Save unsaved content?",
                     caption: "Saveing",
                     button: MessageBoxButton.YesNoCancel,
-                    icon: MessageBoxImage.Warning);
+                    image: MessageBoxImage.Warning);
 
                 if (msgBoxResult == MessageBoxResult.Yes)
                 {
                     SaveCommand_Executed(this, null!);
                 }
 
-                e.Cancel = msgBoxResult == MessageBoxResult.Cancel;
+                e.Cancel = msgBoxResult is null
+                    || msgBoxResult == MessageBoxResult.Cancel
+                    || msgBoxResult == MessageBoxResult.None;
             }
 
             base.OnClosing(e);
@@ -63,11 +96,11 @@ namespace TextEditor
 
         private void LoadSettings()
         {
-            // file settings
             ChangeFont(_editorSettings.Font.ToFontFamily());
             ChangeFontSize(_editorSettings.FontSize);
             SwitchTextWrap(_editorSettings.TextWrap);
             SwitchStatusBar(_editorSettings.StatusBar);
+            SwitchLineNumbers(_editorSettings.LineNumbers);
         }
 
         private void SubscribeEvents()
@@ -76,6 +109,7 @@ namespace TextEditor
             _settingsWindow.OnFontSizeChange += ChangeFontSize;
             _settingsWindow.OnTextWrapChange += SwitchTextWrap;
             _settingsWindow.OnStatusBarChange += SwitchStatusBar;
+            _settingsWindow.OnLineNumbersChange += SwitchLineNumbers;
         }
 
         private void ChangeFont(FontFamily fontFamily)
@@ -86,6 +120,7 @@ namespace TextEditor
         private void ChangeFontSize(double fontSize)
         {
             EditorContent.FontSize = fontSize;
+            EditorLineNumbers.FontSize = fontSize;
         }
 
         private void SwitchTextWrap(bool isChecked)
@@ -118,11 +153,24 @@ namespace TextEditor
             _editorSettings.StatusBar = visibilityState;
         }
 
+        private void SwitchLineNumbers(bool visibilityState)
+        {
+            if (visibilityState)
+            {
+                EditorLineNumbers.Visibility = Visibility.Visible;
+            }
+            else
+            {
+                EditorLineNumbers.Visibility = Visibility.Collapsed;
+            }
+
+            LineNumbersTrigger.IsChecked = visibilityState;
+            _editorSettings.LineNumbers = visibilityState;
+        }
+
         private async void NewCommand_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            _handler = new NoFileHandler();
-            EditorContent.Text = await _handler.ReadAllTextAsync();
-            EditorContent.Focus();
+            await SetNewTextHandler();
         }
 
         private async void OpenCommand_Executed(object sender, ExecutedRoutedEventArgs e)
@@ -131,9 +179,7 @@ namespace TextEditor
 
             if (dialog.ShowDialog() is true)
             {
-                _handler = new FileHandler(dialog.FileName);
-                EditorContent.Text = await _handler.ReadAllTextAsync();
-                await StatusBlock.SetColoredText("File opened.", Brushes.Green);
+                await SetNewTextHandler(dialog.FileName);
             }
         }
 
@@ -145,8 +191,7 @@ namespace TextEditor
 
                 if (dialog.ShowDialog() is true)
                 {
-                    _handler = new FileHandler(dialog.FileName);
-                    await StatusBlock.SetColoredText("File opened.", Brushes.Green);
+                    await SetNewTextHandler(dialog.FileName);
                 }
             }
 
@@ -154,17 +199,11 @@ namespace TextEditor
             {
                 await _handler.WriteAllTextAsync(EditorContent.Text);
             }
-
-            if (_handler is FileHandler)
-            {
-                await StatusBlock.SetColoredText("File saved.", Brushes.Green);
-            }
         }
 
         private async void SaveAsCommand_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            _handler = new NoFileHandler();
-            await _handler.WriteAllTextAsync(EditorContent.Text);
+            await SetNewTextHandler();
             SaveCommand_Executed(sender, e);
         }
 
@@ -177,7 +216,7 @@ namespace TextEditor
 
         private void ExitApplicationCommand_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            _settingsWindow?.Close();
+            _settingsWindow.Close();
             Close();
         }
 
@@ -189,21 +228,73 @@ namespace TextEditor
         private void KeyBinding_MouseWheel(object sender, MouseWheelEventArgs e)
         {
             if (Keyboard.Modifiers is ModifierKeys.Control &&
-                ((EditorContent.FontSize >= 12 && e.Delta < 0) || (EditorContent.FontSize <= 100 && e.Delta > 0)))
+                ((EditorContent.FontSize >= 12 && e.Delta < 0) || (EditorContent.FontSize <= 110 && e.Delta > 0)))
             {
-                EditorContent.FontSize += e.Delta / 30d;
-                _editorSettings.FontSize = EditorContent.FontSize;
+                _editorSettings.FontSize += e.Delta / 30d;
+                EditorContent.FontSize = _editorSettings.FontSize;
+                EditorLineNumbers.FontSize = _editorSettings.FontSize;
+
+                EditorContent_TextChanged(this, null!);
             }
+        }
+
+        private void EditorContent_ScrollChanged(object sender, ScrollChangedEventArgs e)
+        {
+            NumberLinesScroll.ScrollToVerticalOffset(e.VerticalOffset);
+        }
+
+        private void EditorContent_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            // TODO: fix line numerating with text wrapping
+            var sb = new StringBuilder();
+
+            for (var i = 1; i <= EditorContent.LineCount; i++)
+            {
+                sb.Append(i);
+                sb.Append('\n');
+            }
+
+            EditorLineNumbers.Text = sb.ToString();
         }
 
         private void TextWrapTrigger_Click(object sender, RoutedEventArgs e)
         {
-            SwitchTextWrap(!TextWrapTrigger.IsChecked);
+            SwitchTextWrap(TextWrapTrigger.IsChecked);
         }
 
         private void StatusBarTrigger_Click(object sender, RoutedEventArgs e)
         {
-            SwitchStatusBar(!StatusBarTrigger.IsChecked);
+            SwitchStatusBar(StatusBarTrigger.IsChecked);
+        }
+
+        private void LineNumbersTrigger_Click(object sender, RoutedEventArgs e)
+        {
+            SwitchLineNumbers(LineNumbersTrigger.IsChecked);
+        }
+
+        private async void EditorContent_Drop(object sender, DragEventArgs e)
+        {
+            // FIXME: drag and drop not working
+#if DEBUG
+            MessageBox.Show("Drag and Dropped");
+#endif
+
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                var files = e.Data.GetData(DataFormats.FileDrop) as string[];
+                if (files is not null && files.Length > 0)
+                {
+                    await SetNewTextHandler(files[0]);
+                }
+            }
+        }
+
+        private void EditorContent_DragEnter(object sender, DragEventArgs e)
+        {
+            if (e.Data.GetDataPresent(DataFormats.FileDrop))
+            {
+                e.Effects = DragDropEffects.Move;
+            }
         }
     }
 }
