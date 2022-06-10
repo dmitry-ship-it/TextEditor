@@ -2,6 +2,9 @@
 
 namespace TextEditor.Extensions
 {
+    /// <summary>
+    /// Custom application commands.
+    /// </summary>
     public static class ApplicationCommandsExtension
     {
         public static readonly RoutedUICommand SaveAs = new(

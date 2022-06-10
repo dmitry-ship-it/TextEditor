@@ -1,4 +1,5 @@
-﻿using System;
+﻿using ModernWpf;
+using System;
 using System.IO;
 using System.Text.Json;
 
@@ -16,6 +17,8 @@ namespace TextEditor.Resources
         public bool StatusBar { get; set; } = true;
 
         public bool LineNumbers { get; set; } = false;
+
+        public ApplicationTheme ApplicationTheme { get; set; } = ThemeManager.Current.ActualApplicationTheme;
 
         [NonSerialized]
         public const string FilePath = $"{nameof(EditorSettings)}.json";

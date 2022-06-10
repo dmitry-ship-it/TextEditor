@@ -1,6 +1,6 @@
 ﻿namespace TextEditor.TextHandling
 {
-    public enum DialogType
+    public enum FileDialogType
     {
         Save,
         Open

@@ -1,6 +1,4 @@
-﻿using ModernWpf;
-using System;
-using System.IO;
+﻿using System.IO;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Windows.Media;
@@ -11,16 +9,17 @@ namespace TextEditor.Visual
     {
         private const int DelayValue = 5000;
 
-        public static async Task SetColoredTextAsync(this TextBlock textBlock, string text, Brush brush, string filePath = "")
+        public static async Task SetColoredTextAsync(this TextBlock textBlock, string text, Brush brush, string? filePath = null)
         {
             textBlock.Text = text;
-            //textBlock.Foreground = brush;
+            textBlock.Foreground = brush;
 
             await textBlock.ResetAsync(filePath);
         }
 
-        private static async Task ResetAsync(this TextBlock textBlock, string filePath)
+        private static async Task ResetAsync(this TextBlock textBlock, string? filePath)
         {
+            // change text only after delay
             await Task.Delay(DelayValue);
 
             if (string.IsNullOrEmpty(filePath))
@@ -33,7 +32,7 @@ namespace TextEditor.Visual
                 textBlock.Text = filePath[lastDirSeparator..];
             }
 
-            //textBlock.Foreground.ClearValue(TextBlock.ForegroundProperty);
+            textBlock.ClearValue(TextBlock.ForegroundProperty);
         }
     }
 }

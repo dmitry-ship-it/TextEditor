@@ -18,13 +18,17 @@ namespace TextEditor
         {
             var services = new ServiceCollection();
             ConfigureServices(services);
+
+            // create DI container
             _serviceProvider = services.BuildServiceProvider();
         }
 
         private static void ConfigureServices(ServiceCollection services)
         {
+            // create seetings file if it not exists
             CreateRequiredFiles();
 
+            // DI
             services.AddSingleton<MainWindow>();
             services.AddSingleton(JsonSerializer.Deserialize<EditorSettings>(File.ReadAllText(EditorSettings.FilePath))!);
         }
@@ -34,16 +38,21 @@ namespace TextEditor
             EditorSettings.CreateFile();
         }
 
-        private async void OnStartup(object sender, StartupEventArgs e)
+        /// <summary>
+        /// Creates <c>MainWindow</c> by using DI container.
+        /// </summary>
+        /// <exception cref="ArgumentException"></exception>
+        private void OnStartup(object sender, StartupEventArgs e)
         {
             var mainWindow = _serviceProvider.GetService<MainWindow>()
                 ?? throw new ArgumentException("Service not found.");
 
             mainWindow.Show();
-
-            await mainWindow.ProcessStartupArgs(e.Args);
         }
 
+        /// <summary>
+        /// Explicitly dispose service provider.
+        /// </summary>
         protected override void OnExit(ExitEventArgs e)
         {
             base.OnExit(e);

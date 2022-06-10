@@ -26,6 +26,9 @@ namespace TextEditor
             LoadSettings();
         }
 
+        /// <summary>
+        /// Save settings on window close.
+        /// </summary>
         protected override void OnClosed(EventArgs e)
         {
             base.OnClosed(e);
@@ -53,13 +56,20 @@ namespace TextEditor
 
             // load line numbers visibility
             EditorLineNumbers.IsChecked = _data.LineNumbers;
+
+            // load application theme
+            ThemeManager.Current.ApplicationTheme = _data.ApplicationTheme;
         }
 
+        // events
         public event Action<FontFamily>? OnFontChange;
         public event Action<double>? OnFontSizeChange;
         public event Action<bool>? OnTextWrapChange;
         public event Action<bool>? OnStatusBarChange;
         public event Action<bool>? OnLineNumbersChange;
+
+        // Applies the selected in this windows settings.
+        #region Event handlers
 
         private void FontChoose_DropDownClosed(object sender, EventArgs e)
         {
@@ -89,19 +99,19 @@ namespace TextEditor
 
         private void EditorWordWrap_Changed(object sender, RoutedEventArgs e)
         {
-            _data.TextWrap = (bool)EditorWordWrap.IsChecked!;
+            _data.TextWrap = EditorWordWrap.IsChecked!.Value;
             OnTextWrapChange?.Invoke(_data.TextWrap);
         }
 
         private void EditorStatusBar_Changed(object sender, RoutedEventArgs e)
         {
-            _data.StatusBar = (bool)EditorStatusBar.IsChecked!;
+            _data.StatusBar = EditorStatusBar.IsChecked!.Value;
             OnStatusBarChange?.Invoke(_data.StatusBar);
         }
 
         private void EditorLineNumbers_Changed(object sender, RoutedEventArgs e)
         {
-            _data.LineNumbers = (bool)EditorLineNumbers.IsChecked!;
+            _data.LineNumbers = EditorLineNumbers.IsChecked!.Value;
             OnLineNumbersChange?.Invoke(_data.LineNumbers);
         }
 
@@ -115,6 +125,10 @@ namespace TextEditor
             {
                 ThemeManager.Current.ApplicationTheme = ApplicationTheme.Light;
             }
+
+            _data.ApplicationTheme = ThemeManager.Current.ApplicationTheme!.Value;
         }
+
+        #endregion
     }
 }

@@ -21,7 +21,7 @@
         <CommandBinding Command="cmdExt:ApplicationCommandsExtension.InsertDateTime" Executed="InsertDateTimeCommand_Executed"/>
     </Window.CommandBindings>
 
-    <Grid>
+    <Grid AllowDrop="True" Drop="EditorContent_Drop">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition/>
@@ -65,24 +65,22 @@
             </MenuItem>
         </Menu>
 
-        <Border CornerRadius="2" BorderThickness="1" BorderBrush="Gray" AllowDrop="True" Grid.Row="1" Grid.Column="0">
-            <ScrollViewer x:Name="NumberLinesScroll" VerticalScrollBarVisibility="Hidden" HorizontalScrollBarVisibility="Hidden">
-                <TextBlock Background="Transparent" 
-                           FontWeight="Bold" 
-                           IsEnabled="False" 
-                           Text="1" 
-                           TextAlignment="Right"
-                           ScrollViewer.CanContentScroll="True"
-                           x:Name="EditorLineNumbers"/>
-            </ScrollViewer>
-        </Border>
+        <TextBox IsEnabled="False"
+                 Background="Transparent"
+                 Text="1" 
+                 TextAlignment="Right"
+                 ScrollViewer.CanContentScroll="True"
+                 MinWidth="0"
+                 x:Name="EditorLineNumbers"
+                 Visibility="{Binding ElementName=EditorLineNumbers,Path=Visibility}"
+                 Grid.Row="1"
+                 Grid.Column="0"/>
 
         <TextBox ScrollViewer.CanContentScroll="True"
                  ScrollViewer.VerticalScrollBarVisibility="Auto"
                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
                  AllowDrop="True"
                  Drop="EditorContent_Drop"
-                 DragEnter="EditorContent_DragEnter"
                  MouseWheel="KeyBinding_MouseWheel"
                  TextChanged="EditorContent_TextChanged"
                  ScrollViewer.ScrollChanged="EditorContent_ScrollChanged"

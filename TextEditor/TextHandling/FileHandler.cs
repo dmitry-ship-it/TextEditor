@@ -25,7 +25,7 @@ namespace TextEditor.TextHandling
 
         public void SetNewFileInstance()
         {
-            var dialog = CreateFileDialog(DialogType.Save);
+            var dialog = CreateFileDialog(FileDialogType.Save);
 
             if (dialog.ShowDialog() is true)
             {
@@ -53,12 +53,12 @@ namespace TextEditor.TextHandling
             await File.WriteAllTextAsync(_path, text);
         }
 
-        public static FileDialog CreateFileDialog(DialogType dialogType)
+        public static FileDialog CreateFileDialog(FileDialogType dialogType)
         {
             FileDialog dialog = dialogType switch
             {
-                DialogType.Save => new SaveFileDialog(),
-                DialogType.Open => new OpenFileDialog(),
+                FileDialogType.Save => new SaveFileDialog(),
+                FileDialogType.Open => new OpenFileDialog(),
                 _ => throw new ArgumentException("Unknown dialog type.", nameof(dialogType))
             };
 

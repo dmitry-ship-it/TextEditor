@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Text;
 using System.Linq;
+using System.Diagnostics;
 
 namespace TextEditor
 {
@@ -33,36 +34,53 @@ namespace TextEditor
 
             SubscribeEvents();
             LoadSettings();
-            SetNewTextHandler().Wait();
+
+            _handler = GetNewTextHandler().Result;
         }
 
-        private async Task SetNewTextHandler(string? filePath = null)
+        /// <summary>
+        /// Creates new text handler. If <c>filePath</c> is not null or empty,
+        /// then method checks if file exists. If file exists then 
+        /// <c>FileHandler</c> well be created. In other cases <c>NoFileHandler</c>
+        /// will be created.
+        /// </summary>
+        /// <param name="filePath">Full or realtive path to target file.</param>
+        /// <returns><c>ITextHandler</c> which can be <c>NoFileHandler</c> or <c>FileHandler</c>.</returns>
+        private async Task<ITextHandler> GetNewTextHandler(string? filePath = null)
         {
-            if (string.IsNullOrEmpty(filePath))
+            ITextHandler textHandler = string.IsNullOrEmpty(filePath)
+                ? new NoFileHandler()
+                : new FileHandler(filePath);
+
+            EditorContent.Text = await textHandler.ReadAllTextAsync();
+
+            if (textHandler is FileHandler)
             {
-                _handler = new NoFileHandler();
-            }
-            else
-            {
-                _handler = new FileHandler(filePath);
+                await StatusBlock.SetColoredTextAsync("File opened", Brushes.BlueViolet, filePath);
             }
 
-            EditorContent.Text = await _handler.ReadAllTextAsync();
-
-            if (_handler is FileHandler)
-            {
-                await StatusBlock.SetColoredTextAsync("File opened", Brushes.BlueViolet, filePath!);
-            }
+            return textHandler;
         }
 
-        public async Task ProcessStartupArgs(string[] args)
+        /// <summary>
+        /// This method is overridden to process command line args.
+        /// </summary>
+        protected override async void OnContentRendered(EventArgs e)
         {
-            if (args is not null && args.Length == 1 && File.Exists(args[0]))
-            {
-                await SetNewTextHandler(args[0]);
-            }
+            base.OnContentRendered(e);
+
+            var args = Environment.GetCommandLineArgs();
+            var file = args?.Length > 1 && File.Exists(args[1])
+                ? args[1]
+                : null;
+
+            _handler = await GetNewTextHandler(file);
         }
 
+        /// <summary>
+        /// Method is overridden to check if text in editor is saved.
+        /// If not, <c>ModernWpf.MessageBox</c> will be shown with a save request.
+        /// </summary>
         protected override async void OnClosing(CancelEventArgs e)
         {
             // check for unsaved text
@@ -88,12 +106,19 @@ namespace TextEditor
             base.OnClosing(e);
         }
 
+        /// <summary>
+        /// In some cases application is not closing properly,
+        /// so it becomes necessary to explicitly call <c>Shutdown</c> on app close.
+        /// </summary>
         protected override void OnClosed(EventArgs e)
         {
             base.OnClosed(e);
             Application.Current.Shutdown();
         }
 
+        /// <summary>
+        /// Sets editor related settings.
+        /// </summary>
         private void LoadSettings()
         {
             ChangeFont(_editorSettings.Font.ToFontFamily());
@@ -103,6 +128,9 @@ namespace TextEditor
             SwitchLineNumbers(_editorSettings.LineNumbers);
         }
 
+        /// <summary>
+        /// Sets event handlers for changes in the settings window.
+        /// </summary>
         private void SubscribeEvents()
         {
             _settingsWindow.OnFontChange += ChangeFont;
@@ -112,17 +140,31 @@ namespace TextEditor
             _settingsWindow.OnLineNumbersChange += SwitchLineNumbers;
         }
 
+        /// <summary>
+        /// One of the event handlers. Sets <c>FontFamily</c> of text editor.
+        /// </summary>
+        /// <param name="fontFamily">Font family from <c>System.Windows.Media</c> namespace.</param>
         private void ChangeFont(FontFamily fontFamily)
         {
             EditorContent.FontFamily = fontFamily;
         }
 
+        /// <summary>
+        /// One of the event handlers. Sets <c>FontSize</c> of text editor and line numbers.
+        /// </summary>
         private void ChangeFontSize(double fontSize)
         {
             EditorContent.FontSize = fontSize;
             EditorLineNumbers.FontSize = fontSize;
         }
 
+        /// <summary>
+        /// One of the event handlers. Changes text wrapping parameter.
+        /// </summary>
+        /// <param name="isChecked">
+        /// True to set <c>TextWrappping</c> to <c>Wrap</c>.
+        /// False to set <c>TextWrapping</c> to <c>NoWrap</c>.
+        /// </param>
         private void SwitchTextWrap(bool isChecked)
         {
             if (isChecked)
@@ -138,6 +180,13 @@ namespace TextEditor
             _editorSettings.TextWrap = isChecked;
         }
 
+        /// <summary>
+        /// One of the event handlers. Changes status bar visibility state.
+        /// </summary>
+        /// <param name="visibilityState">
+        /// True to set <c>Visibility</c> to <c>Visible</c>.
+        /// False to set <c>Visibility</c> to <c>Collapsed</c>.
+        /// </param>
         private void SwitchStatusBar(bool visibilityState)
         {
             if (visibilityState)
@@ -153,6 +202,13 @@ namespace TextEditor
             _editorSettings.StatusBar = visibilityState;
         }
 
+        /// <summary>
+        /// One of the event handlers. Changes line numbers textbox visibility state.
+        /// </summary>
+        /// <param name="visibilityState">
+        /// True to set <c>Visibility</c> to <c>Visible</c>.
+        /// False to set <c>Visibility</c> to <c>Collapsed</c>.
+        /// </param>
         private void SwitchLineNumbers(bool visibilityState)
         {
             if (visibilityState)
@@ -168,30 +224,39 @@ namespace TextEditor
             _editorSettings.LineNumbers = visibilityState;
         }
 
+        /// <summary>
+        /// Handler for standard command <b>New</b>.
+        /// </summary>
         private async void NewCommand_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            await SetNewTextHandler();
+            _handler = await GetNewTextHandler();
         }
 
+        /// <summary>
+        /// Handler for standard command <b>Open</b>.
+        /// </summary>
         private async void OpenCommand_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            var dialog = FileHandler.CreateFileDialog(DialogType.Open);
+            var dialog = FileHandler.CreateFileDialog(FileDialogType.Open);
 
             if (dialog.ShowDialog() is true)
             {
-                await SetNewTextHandler(dialog.FileName);
+                _handler = await GetNewTextHandler(dialog.FileName);
             }
         }
 
+        /// <summary>
+        /// Handler for standard command <b>Save</b>.
+        /// </summary>
         private async void SaveCommand_Executed(object sender, ExecutedRoutedEventArgs e)
         {
             if (_handler is NoFileHandler)
             {
-                var dialog = FileHandler.CreateFileDialog(DialogType.Save);
+                var dialog = FileHandler.CreateFileDialog(FileDialogType.Save);
 
                 if (dialog.ShowDialog() is true)
                 {
-                    await SetNewTextHandler(dialog.FileName);
+                    _handler = await GetNewTextHandler(dialog.FileName);
                 }
             }
 
@@ -201,12 +266,19 @@ namespace TextEditor
             }
         }
 
+        /// <summary>
+        /// Handler for standard command <b>SaveAs</b>.
+        /// </summary>
         private async void SaveAsCommand_Executed(object sender, ExecutedRoutedEventArgs e)
         {
-            await SetNewTextHandler();
+            _handler = await GetNewTextHandler();
             SaveCommand_Executed(sender, e);
         }
 
+        /// <summary>
+        /// Handler for custom command <b>GotoSettings</b>.
+        /// Command is defined in <c>ApplicationCommandsExtension</c> class.
+        /// </summary>
         private void GotoSettingsCommand_Executed(object sender, ExecutedRoutedEventArgs e)
         {
             _settingsWindow = new SettingsWindow(_editorSettings);
@@ -214,35 +286,50 @@ namespace TextEditor
             _settingsWindow.Show();
         }
 
+        /// <summary>
+        /// Handler for custom command <b>ExitApplication</b>.
+        /// Command is defined in <c>ApplicationCommandsExtension</c> class.
+        /// </summary>
         private void ExitApplicationCommand_Executed(object sender, ExecutedRoutedEventArgs e)
         {
             _settingsWindow.Close();
             Close();
         }
 
+        /// <summary>
+        /// Handler for custom command <b>InsertDateTime</b>.
+        /// Command is defined in <c>ApplicationCommandsExtension</c> class.
+        /// </summary>
         private void InsertDateTimeCommand_Executed(object sender, ExecutedRoutedEventArgs e)
         {
             EditorContent.Text = EditorContent.Text.Insert(EditorContent.CaretIndex, DateTime.Now.ToString());
         }
 
+        /// <summary>
+        /// Event handler. Changes font size of editor and line numbers.
+        /// </summary>
         private void KeyBinding_MouseWheel(object sender, MouseWheelEventArgs e)
         {
             if (Keyboard.Modifiers is ModifierKeys.Control &&
                 ((EditorContent.FontSize >= 12 && e.Delta < 0) || (EditorContent.FontSize <= 110 && e.Delta > 0)))
             {
                 _editorSettings.FontSize += e.Delta / 30d;
-                EditorContent.FontSize = _editorSettings.FontSize;
-                EditorLineNumbers.FontSize = _editorSettings.FontSize;
-
+                ChangeFontSize(_editorSettings.FontSize);
                 EditorContent_TextChanged(this, null!);
             }
         }
 
+        /// <summary>
+        /// Event handler. Changes vertical scroll offset of line numbers textbox.
+        /// </summary>
         private void EditorContent_ScrollChanged(object sender, ScrollChangedEventArgs e)
         {
-            NumberLinesScroll.ScrollToVerticalOffset(e.VerticalOffset);
+            EditorLineNumbers.ScrollToVerticalOffset(e.VerticalOffset);
         }
 
+        /// <summary>
+        /// Event handler. Sets new value to line numbers textbox.
+        /// </summary>
         private void EditorContent_TextChanged(object sender, TextChangedEventArgs e)
         {
             // TODO: fix line numerating with text wrapping
@@ -257,21 +344,33 @@ namespace TextEditor
             EditorLineNumbers.Text = sb.ToString();
         }
 
+        /// <summary>
+        /// Event handler. Changes text wrapping by pressing the corresponding button in the menu.
+        /// </summary>
         private void TextWrapTrigger_Click(object sender, RoutedEventArgs e)
         {
             SwitchTextWrap(TextWrapTrigger.IsChecked);
         }
 
+        /// <summary>
+        /// Event handler. Changes status bar visibility by pressing the corresponding button in the menu.
+        /// </summary>
         private void StatusBarTrigger_Click(object sender, RoutedEventArgs e)
         {
             SwitchStatusBar(StatusBarTrigger.IsChecked);
         }
 
+        /// <summary>
+        /// Event handler. Changes line numbers visibility by pressing the corresponding button in the menu.
+        /// </summary>
         private void LineNumbersTrigger_Click(object sender, RoutedEventArgs e)
         {
             SwitchLineNumbers(LineNumbersTrigger.IsChecked);
         }
 
+        /// <summary>
+        /// Event handler for drag and dropping. Opens dropped file.
+        /// </summary>
         private async void EditorContent_Drop(object sender, DragEventArgs e)
         {
             // FIXME: drag and drop not working
@@ -284,16 +383,8 @@ namespace TextEditor
                 var files = e.Data.GetData(DataFormats.FileDrop) as string[];
                 if (files is not null && files.Length > 0)
                 {
-                    await SetNewTextHandler(files[0]);
+                    _handler = await GetNewTextHandler(files[0]);
                 }
-            }
-        }
-
-        private void EditorContent_DragEnter(object sender, DragEventArgs e)
-        {
-            if (e.Data.GetDataPresent(DataFormats.FileDrop))
-            {
-                e.Effects = DragDropEffects.Move;
             }
         }
     }
