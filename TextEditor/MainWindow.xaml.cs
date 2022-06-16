@@ -156,6 +156,8 @@ namespace TextEditor
         {
             EditorContent.FontSize = fontSize;
             EditorLineNumbers.FontSize = fontSize;
+
+            EditorContent_TextChanged(this, null!);
         }
 
         /// <summary>
@@ -178,6 +180,8 @@ namespace TextEditor
 
             TextWrapTrigger.IsChecked = isChecked;
             _editorSettings.TextWrap = isChecked;
+
+            EditorContent_TextChanged(this, null!);
         }
 
         /// <summary>
@@ -332,12 +336,30 @@ namespace TextEditor
         /// </summary>
         private void EditorContent_TextChanged(object sender, TextChangedEventArgs e)
         {
-            // TODO: fix line numerating with text wrapping
             var sb = new StringBuilder();
+
+            if (EditorContent.LineCount == -1)
+            {
+                EditorLineNumbers.Text = "1";
+                return;
+            }
+
+            bool nextIsNewline = true;
+            var lineNumber = 1;
 
             for (var i = 1; i <= EditorContent.LineCount; i++)
             {
-                sb.Append(i);
+                if (nextIsNewline)
+                {
+                    sb.Append(lineNumber++);
+                    nextIsNewline = false;
+                }
+
+                if (EditorContent.GetLineText(i - 1).Contains('\n'))
+                {
+                    nextIsNewline = true;
+                }
+
                 sb.Append('\n');
             }
 
