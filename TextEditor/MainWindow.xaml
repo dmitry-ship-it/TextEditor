@@ -21,7 +21,7 @@
         <CommandBinding Command="cmdExt:ApplicationCommandsExtension.InsertDateTime" Executed="InsertDateTimeCommand_Executed"/>
     </Window.CommandBindings>
 
-    <Grid AllowDrop="True" Drop="EditorContent_Drop">
+    <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition/>
@@ -79,8 +79,6 @@
         <TextBox ScrollViewer.CanContentScroll="True"
                  ScrollViewer.VerticalScrollBarVisibility="Auto"
                  ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                 AllowDrop="True"
-                 Drop="EditorContent_Drop"
                  MouseWheel="KeyBinding_MouseWheel"
                  TextChanged="EditorContent_TextChanged"
                  ScrollViewer.ScrollChanged="EditorContent_ScrollChanged"

@@ -11,8 +11,6 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Windows.Controls;
 using System.Text;
-using System.Linq;
-using System.Diagnostics;
 
 namespace TextEditor
 {
@@ -344,7 +342,7 @@ namespace TextEditor
                 return;
             }
 
-            bool nextIsNewline = true;
+            var nextIsNewline = true;
             var lineNumber = 1;
 
             for (var i = 1; i <= EditorContent.LineCount; i++)
@@ -388,26 +386,6 @@ namespace TextEditor
         private void LineNumbersTrigger_Click(object sender, RoutedEventArgs e)
         {
             SwitchLineNumbers(LineNumbersTrigger.IsChecked);
-        }
-
-        /// <summary>
-        /// Event handler for drag and dropping. Opens dropped file.
-        /// </summary>
-        private async void EditorContent_Drop(object sender, DragEventArgs e)
-        {
-            // FIXME: drag and drop not working
-#if DEBUG
-            MessageBox.Show("Drag and Dropped");
-#endif
-
-            if (e.Data.GetDataPresent(DataFormats.FileDrop))
-            {
-                var files = e.Data.GetData(DataFormats.FileDrop) as string[];
-                if (files is not null && files.Length > 0)
-                {
-                    _handler = await GetNewTextHandler(files[0]);
-                }
-            }
         }
     }
 }
